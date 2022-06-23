@@ -1,0 +1,16 @@
+floatList = [10.1, 11.2]
+list = [8, 9]
+value = 1
+
+[group]
+
+  [[group.groupList]]
+    [group.groupList.groupListItem]
+      groupListItemValue = 6
+
+  [[group.groupList]]
+    [group.groupList.groupListItem]
+      groupListItemValue = 7.2
+  [group.subGroup]
+    subGroupList = [3, 4, 5]
+    subGroupValue = 2

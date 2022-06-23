@@ -3,6 +3,7 @@ package conflate
 import (
 	"bytes"
 	"encoding/json"
+
 	"github.com/BurntSushi/toml"
 	"github.com/ghodss/yaml"
 )
@@ -27,12 +28,53 @@ func jsonMarshalUnmarshal(in interface{}, out interface{}) error {
 	return JSONUnmarshal(data, out)
 }
 
+func jsonPostUnmarshalConvertNumber(raw interface{}) interface{} {
+	switch raw.(type) {
+	case *interface{}:
+		rawInterface := *raw.(*interface{})
+		return jsonPostUnmarshalConvertNumber(rawInterface)
+	case *map[string]interface{}:
+		rawMap := *raw.(*map[string]interface{})
+		return jsonPostUnmarshalConvertNumber(rawMap)
+	case *[]interface{}:
+		rawSlice := *raw.(*[]interface{})
+		return jsonPostUnmarshalConvertNumber(rawSlice)
+	case map[string]interface{}:
+		rawMap := raw.(map[string]interface{})
+		for key, val := range rawMap {
+			rawMap[key] = jsonPostUnmarshalConvertNumber(val)
+		}
+		return rawMap
+	case []interface{}:
+		rawSlice := raw.([]interface{})
+		for index, val := range rawSlice {
+			rawSlice[index] = jsonPostUnmarshalConvertNumber(val)
+		}
+		return rawSlice
+	case json.Number:
+		rawJSONNumber := raw.(json.Number)
+		if intValue, err := rawJSONNumber.Int64(); err == nil {
+			return intValue
+		} else if floatValue, err := rawJSONNumber.Float64(); err == nil {
+			return floatValue
+		}
+	}
+
+	return raw
+}
+
 // JSONUnmarshal unmarshals the data as JSON
 func JSONUnmarshal(data []byte, out interface{}) error {
-	err := json.Unmarshal(data, out)
+	decoder := json.NewDecoder(bytes.NewBuffer(data))
+	decoder.UseNumber()
+
+	err := decoder.Decode(out)
 	if err != nil {
 		return wrapError(err, "The data could not be unmarshalled as json")
 	}
+
+	out = jsonPostUnmarshalConvertNumber(out)
+
 	return nil
 }
 
@@ -82,6 +124,7 @@ func tomlMarshal(in interface{}) (out []byte, err error) {
 	}()
 	buf := bytes.Buffer{}
 	enc := toml.NewEncoder(&buf)
+
 	err = enc.Encode(in)
 	if err != nil {
 		return nil, wrapError(err, "The data could not be marshalled to toml")

@@ -342,3 +342,25 @@ func TestConflate_IncludesWithMapArray(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, string(expectedData), string(marshalledData))
 }
+
+func TestConflate_JSONIntegerToTOMLInteger(t *testing.T) {
+	c, err := FromFiles("testdata/json_to_toml_numbers/data.json")
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
+
+	if err != nil {
+		return
+	}
+
+	var data interface{}
+	err = c.Unmarshal(&data)
+	assert.NoError(t, err)
+
+	marshalledData, err := c.MarshalTOML()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, marshalledData)
+
+	expectedData, err := ioutil.ReadFile("testdata/json_to_toml_numbers/expected.toml")
+	assert.NoError(t, err)
+	assert.Equal(t, string(expectedData), string(marshalledData))
+}
