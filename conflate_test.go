@@ -2,11 +2,13 @@ package conflate
 
 import (
 	gocontext "context"
-	"github.com/stretchr/testify/assert"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type TestData struct {
@@ -317,4 +319,26 @@ func TestConflate_mergeDataError(t *testing.T) {
 	err := c.AddData([]byte(`"x": {}`), []byte(`"x": []`))
 	assert.NotNil(t, err)
 	assert.Contains(t, err.Error(), "Failed to merge")
+}
+
+func TestConflate_IncludesWithMapArray(t *testing.T) {
+	c, err := FromFiles("testdata/merge_includes_with_map_array/data.json")
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
+
+	if err != nil {
+		return
+	}
+
+	var data interface{}
+	err = c.Unmarshal(&data)
+	assert.NoError(t, err)
+
+	marshalledData, err := c.MarshalTOML()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, marshalledData)
+
+	expectedData, err := ioutil.ReadFile("testdata/merge_includes_with_map_array/expected.toml")
+	assert.NoError(t, err)
+	assert.Equal(t, string(expectedData), string(marshalledData))
 }

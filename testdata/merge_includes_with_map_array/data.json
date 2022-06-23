@@ -1,0 +1,6 @@
+{
+    "includes": [
+      "./first.toml",
+      "./second.toml"
+    ]
+}

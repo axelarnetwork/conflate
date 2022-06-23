@@ -1,6 +1,7 @@
 package conflate
 
 import (
+	"fmt"
 	"reflect"
 )
 
@@ -77,17 +78,39 @@ func mergeMapRecursive(ctx context, toVal reflect.Value, fromVal reflect.Value,
 	return nil
 }
 
+func toSliceOfInterface[S interface{}](source []S) []interface{} {
+	out := make([]interface{}, len(source))
+
+	for i, v := range source {
+		out[i] = v
+	}
+
+	return out
+}
+
 func mergeSliceRecursive(ctx context, toVal reflect.Value, fromVal reflect.Value,
 	toData interface{}, fromData interface{}) error {
 
-	fromItems, ok := fromData.([]interface{})
-	if !ok {
-		return makeContextError(ctx, "The source value must be a []interface{}")
+	var fromItems, toItems []interface{}
+
+	switch fromData.(type) {
+	case []interface{}:
+		fromItems = fromData.([]interface{})
+	case []map[string]interface{}:
+		fromItems = toSliceOfInterface(fromData.([]map[string]interface{}))
+	default:
+		return makeContextError(ctx, fmt.Sprintf("The source value must be a []interface{} or []map[string]interface{}, but was %s", fromVal.Type()))
 	}
-	toItems, _ := toData.([]interface{})
-	if toItems == nil {
-		return makeContextError(ctx, "The destination value must be a []interface{}")
+
+	switch toData.(type) {
+	case []interface{}:
+		toItems = toData.([]interface{})
+	case []map[string]interface{}:
+		toItems = toSliceOfInterface(toData.([]map[string]interface{}))
+	default:
+		return makeContextError(ctx, fmt.Sprintf("The destination value must be a []interface{}, but was %s", toVal.Type()))
 	}
+
 	toItems = append(toItems, fromItems...)
 	toVal.Set(reflect.ValueOf(toItems))
 	return nil

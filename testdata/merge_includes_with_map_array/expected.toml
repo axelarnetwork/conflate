@@ -1,0 +1,7 @@
+[[array]]
+  key_one = "first_one"
+  key_two = "first_two"
+
+[[array]]
+  key_one = "second_one"
+  key_two = "second_two"
